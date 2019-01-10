@@ -12,6 +12,7 @@ option(BUILD_RTREMOTE_STATIC_LIB "BUILD_RTREMOTE_STATIC_LIB" ON)
 option(BUILD_RTREMOTE_SAMPLE_APP_SHARED "BUILD_RTREMOTE_SAMPLE_APP_SHARED" OFF)
 option(BUILD_RTREMOTE_SAMPLE_APP_STATIC "BUILD_RTREMOTE_SAMPLE_APP_STATIC" OFF)
 option(BUILD_RTREMOTE_SAMPLE_APP_SIMPLE "BUILD_RTREMOTE_SAMPLE_APP_SIMPLE" OFF)
+option(BUILD_RTREMOTE_UNICAST_RESOLVER "BUILD_RTREMOTE_UNICAST_RESOLVER" OFF)
 option(ENABLE_RTREMOTE_DEBUG "ENABLE_RTREMOTE_DEBUG" OFF)
 option(ENABLE_RTREMOTE_PROFILE "ENABLE_RTREMOTE_PROFILE" OFF)
 
@@ -23,12 +24,12 @@ set(RTREMOTE_SOURCE_FILES rtremote.conf.gen rtRemoteConfig.h src/rtRemoteServer.
         src/rtRemoteEnvironment.cpp src/rtRemoteStreamSelector.cpp src/rtGuid.cpp)
 
 add_definitions(-DRAPIDJSON_HAS_STDSTRING -DRT_PLATFORM_LINUX -DRT_REMOTE_LOOPBACK_ONLY)
-include_directories(AFTER ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/external ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${RT_INCLUDE_DIR} )
+include_directories(AFTER ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/external ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${RT_INCLUDE_DIR} ${UWEBSOCKET_INCLUDE_DIR})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
 set(LIBRARY_LINKER_OPTIONS -pthread -ldl -luuid -Wl,-rpath=../../,--enable-new-dtags)
-set(RTREMOTE_LINK_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR} ${RT_LIBRARY_DIR} )
+set(RTREMOTE_LINK_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR} ${RT_LIBRARY_DIR} ${UWEBSOCKET_LIBRARY_DIR})
 
 if (CMAKE_CROSSCOMPILING OR RTREMOTE_GENERATOR_EXPORT)
     option(RTREMOTE_GENERATOR_EXPORT "Location of rtRemote export file (rtRemoteConfigGen_export.cmake) from a native build" "RTREMOTE_GENERATOR_EXPORT-file-not-found")
@@ -113,3 +114,13 @@ if (BUILD_RTREMOTE_SAMPLE_APP_SIMPLE)
     target_link_libraries(rtremote_sample_app_server ${LIBRARY_LINKER_OPTIONS} -lrtCore rtremote_shared -luuid)
     target_compile_definitions(rtremote_sample_app_server PRIVATE RT_PLATFORM_LINUX RAPIDJSON_HAS_STDSTRING)
 endif (BUILD_RTREMOTE_SAMPLE_APP_SIMPLE)
+
+if (BUILD_RTREMOTE_UNICAST_RESOLVER)
+    message ("Building rtRemote unicast resolver")
+    set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} -std=c++11")
+    link_directories(${RTREMOTE_LINK_DIRECTORIES})
+    add_executable(rtremote_unicast_resolver src/rtUnicastResolver.cpp)
+    set_target_properties(rtremote_unicast_resolver PROPERTIES OUTPUT_NAME "rtunicastresolverd")
+    target_link_libraries(rtremote_unicast_resolver ${LIBRARY_LINKER_OPTIONS} -lrtCore rtremote_shared -luuid -lz -luWS -lssl -lcrypto)
+    target_compile_definitions(rtremote_unicast_resolver PRIVATE RT_PLATFORM_LINUX RAPIDJSON_HAS_STDSTRING)
+endif (BUILD_RTREMOTE_UNICAST_RESOLVER)

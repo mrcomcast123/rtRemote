@@ -279,3 +279,11 @@ rtRemoteRunUntil(rtRemoteEnvironment* env, uint32_t millisecondsFromNow, bool wa
   }
   return e;
 }
+
+//For some strange reason, rtStrError is not getting exported from librtCore so I'm hacking for now
+const char* rtStrError(rtError e)
+{
+  static char buffer[20];
+  sprintf(buffer, "%d", (int)e);
+  return buffer;
+}
