@@ -36,7 +36,7 @@ Build Instructions for rtRemote (Linux only)
    cd rtRemote
    mkdir temp
    cd temp 
-   cmake -DRT_INCLUDE_DIR="../pxCore_main/src/" -DUWEBSOCKET_INCLUDE_DIR="../pxCore_main/examples/pxScene2d/external/uWebSockets/src" -DRT_LIBRARY_DIR="../pxCore_main/build/glut/" -DUWEBSOCKET_LIBRARY_DIR="../pxCore_main/examples/pxScene2d/external/uWebSocket" -DBUILD_RTREMOTE_LIBS=ON -DBUILD_RTREMOTE_UNICAST_RESOLVER=ON -DBUILD_RTREMOTE_SAMPLE_APP_SIMPLE=ON ..
+   cmake -DRT_INCLUDE_DIR="../pxCore_main/src/" -DUWEBSOCKET_INCLUDE_DIR="../pxCore_main/examples/pxScene2d/external/uWebSockets/src" -DRT_LIBRARY_DIR="../pxCore_main/build/glut/" -DUWEBSOCKET_LIBRARY_DIR="../pxCore_main/examples/pxScene2d/external/uWebSocket" -DBUILD_RTREMOTE_UNICAST_RESOLVER=ON -DBUILD_RTREMOTE_SAMPLE_APP_SIMPLE=ON ..
    cmake --build . --config Release
    ~~~~
 

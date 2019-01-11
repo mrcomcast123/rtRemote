@@ -16,10 +16,6 @@
     "default_value":"unix",
     "type":"string" },
 
-{ "name":"rt.rpc.server.socket_family",
-    "default_value":"websocket",
-    "type":"string" },
-
 { "name":"rt.rpc.server.use_dispatch_thread",
     "default_value":"false",
     "type":"bool" },
@@ -94,6 +90,14 @@
 
 { "name":"rt.rpc.resolver.unicast.port",
     "default_value":"49118",
-    "type":"uint16" }
+    "type":"uint16" },
+
+{ "name":"rt.rpc.client.socket_type",
+    "default_value":"csocket",
+    "type":"string" },
+
+{ "name":"rt.rpc.client.socket_type",
+    "default_value":"websocket",
+    "type":"string" }
 
 ] }

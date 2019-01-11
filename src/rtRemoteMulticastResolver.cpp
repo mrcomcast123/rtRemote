@@ -97,8 +97,8 @@ rtError rtRemoteMulticastResolver::sendSearchAndWait(const std::string& name, co
   doc.AddMember(kFieldNameSenderId, m_pid, doc.GetAllocator());
   doc.AddMember(kFieldNameCorrelationKey, seqId.toString(), doc.GetAllocator());
   
-  if(m_env->Config->server_socket_family().compare("websocket") == 0)
-    doc.AddMember(kFieldNameSocketFamily, "websocket", doc.GetAllocator());
+  if(m_env->Config->client_socket_type().compare("websocket") == 0)
+    doc.AddMember(kFieldNameClientSocketType, "websocket", doc.GetAllocator());
 
   // m_ucast_endpoint
   {
@@ -391,9 +391,9 @@ rtRemoteMulticastResolver::onSearch(rtRemoteMessagePtr const& doc, sockaddr_stor
   RT_ASSERT(replyTo != doc->MemberEnd());
 
   bool isWebSocket = false;
-  auto socket_family = doc->FindMember(kFieldNameSocketFamily); 
-  if(socket_family != doc->MemberEnd() && 
-     strcmp("websocket", socket_family->value.GetString()) == 0)
+  auto client_socket_type = doc->FindMember(kFieldNameClientSocketType); 
+  if(client_socket_type != doc->MemberEnd() && 
+     strcmp("websocket", client_socket_type->value.GetString()) == 0)
     isWebSocket = true;
 
   rtRemoteCorrelationKey key = rtMessage_GetCorrelationKey(*doc);
@@ -413,15 +413,14 @@ rtRemoteMulticastResolver::onSearch(rtRemoteMessagePtr const& doc, sockaddr_stor
     doc.AddMember(kFieldNameMessageType, kMessageTypeLocate, doc.GetAllocator());
     doc.AddMember(kFieldNameObjectId, std::string(objectId), doc.GetAllocator());
 
-    //TODO -- need to determine whether the client searching is csocket or websocket
     if(isWebSocket)
     {
-      rtLogDebug("###websocket family###");
+      rtLogDebug("###websocket client###");
       doc.AddMember(kFieldNameEndPoint, m_rpc_websocket_endpoint->toString(), doc.GetAllocator());
     }
     else
     {
-      rtLogDebug("###c socket family###");
+      rtLogDebug("###c socket client###");
       doc.AddMember(kFieldNameEndPoint, m_rpc_csocket_endpoint->toString(), doc.GetAllocator());
     }
 
