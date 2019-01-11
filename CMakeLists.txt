@@ -18,17 +18,17 @@ option(ENABLE_RTREMOTE_PROFILE "ENABLE_RTREMOTE_PROFILE" OFF)
 
 set(RTREMOTE_SOURCE_FILES rtremote.conf.gen rtRemoteConfig.h src/rtRemoteServer.cpp src/rtRemoteObject.cpp
         src/rtRemoteFunction.cpp src/rtRemoteMessage.cpp src/rtRemoteClient.cpp src/rtRemoteValueReader.cpp
-        src/rtRemoteValueWriter.cpp src/rtRemoteSocketUtils.cpp src/rtRemoteStream.cpp
+        src/rtRemoteValueWriter.cpp src/rtRemoteSocketUtils.cpp src/rtRemoteEnvironment.cpp
         src/rtRemoteObjectCache.cpp src/rtRemote.cpp src/rtRemoteConfig.cpp src/rtRemoteEndPoint.cpp src/rtRemoteFactory.cpp
         src/rtRemoteMulticastResolver.cpp rtRemoteConfigBuilder.cpp src/rtRemoteAsyncHandle.cpp
-        src/rtRemoteEnvironment.cpp src/rtRemoteStreamSelector.cpp src/rtGuid.cpp)
+        rtRemoteNet.cpp rtRemoteNetCSocket.cpp rtRemoteNetWebSocket.cpp src/rtGuid.cpp)
 
 add_definitions(-DRAPIDJSON_HAS_STDSTRING -DRT_PLATFORM_LINUX -DRT_REMOTE_LOOPBACK_ONLY)
 include_directories(AFTER ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/external ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${RT_INCLUDE_DIR} ${UWEBSOCKET_INCLUDE_DIR})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
-set(LIBRARY_LINKER_OPTIONS -pthread -ldl -luuid -Wl,-rpath=../../,--enable-new-dtags)
+set(LIBRARY_LINKER_OPTIONS -pthread -ldl -luuid -luWS -lssl -lz -Wl,-rpath=../../,--enable-new-dtags)
 set(RTREMOTE_LINK_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR} ${RT_LIBRARY_DIR} ${UWEBSOCKET_LIBRARY_DIR})
 
 if (CMAKE_CROSSCOMPILING OR RTREMOTE_GENERATOR_EXPORT)
