@@ -19,9 +19,13 @@ limitations under the License.
 #include "rtRemoteNetWebSocket.h"
 #include "rtRemoteSocketUtils.h"
 #include "rtRemoteMessage.h"
+#include "rtRemoteEnvironment.h"
+#include "rtRemoteConfig.h"
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 #include <queue>
+
+extern rtRemoteEnvironment* gEnv;
 
 /*****************************************************************************************
  * 
@@ -158,7 +162,7 @@ rtRemoteWebSocketServer::~rtRemoteWebSocketServer()
 
 rtError rtRemoteWebSocketServer::start(std::shared_ptr<rtRemoteSocketServerListener> listener, int port, const char* host)
 {
-  printf("WebSocket Server Starting\n");
+  rtLogDebug("WebSocket server starting\n");
 
   if(isThreadRunning())
   {
@@ -169,22 +173,41 @@ rtError rtRemoteWebSocketServer::start(std::shared_ptr<rtRemoteSocketServerListe
 
   if(port == 0)
   {
-    //TODO - get port from config
-    port = 3010;
+    port = gEnv->Config->websocket_server_listen_port();
   }
 
-  if(host == nullptr)
+  std::string sHost;
+  if(host != nullptr)
+    sHost = host;
+
+  if(sHost.empty())
   {
-    //TODO we can pass nullptr to m_hub but we should check Config for any specific host it may or may not have
+    rtLogDebug("WebSocket parsing interface=%s", gEnv->Config->websocket_server_listen_interface().c_str());
+
+    if (gEnv->Config->websocket_server_listen_interface() != "lo")
+    {
+      sockaddr_storage ss;
+      rtError e = rtParseAddress(ss, gEnv->Config->websocket_server_listen_interface().c_str(), port, nullptr);
+      if (e == RT_OK)
+      {
+        std::shared_ptr<rtRemoteSocketAddress> addr = rtRemoteSocketAddress::fromSockAddr("ws", ss);
+        sHost = addr->getHost();
+        rtLogDebug("WebSocket parsed host=%s", sHost.c_str());
+      }
+      else
+      {
+        rtLogError("Failed to parse websocket_server_listen_interface=%s", gEnv->Config->websocket_server_listen_interface().c_str());
+      }
+    }
   }
 
-  if(!m_hub.listen(host, port))
+  if(!m_hub.listen(sHost.c_str(), port))
   {
-    printf("server failed to listen on port\n");
+    rtLogDebug("WebSocket server failed to listen on port\n");
     return RT_ERROR;
   }
 
-  printf("server listening at %s %d\n", host, port);
+  rtLogDebug("WebSocket listening at ws://%s:%d\n", sHost.c_str(), port);
 
   m_hub.onConnection([this](uWS::WebSocket<uWS::SERVER> *ws, uWS::HttpRequest req) {
       printf("websocket connect\n");
@@ -237,9 +260,9 @@ rtError rtRemoteWebSocketServer::start(std::shared_ptr<rtRemoteSocketServerListe
       a->close();
   });
 
-  m_address = std::make_shared<rtRemoteSocketAddress>(host != nullptr ? host : "localhost" , port, "ws");
+  m_address = std::make_shared<rtRemoteSocketAddress>(sHost.empty() ? "localhost" : sHost.c_str(), port, "ws");
 
-  printf("server onStart ok\n");
+  rtLogDebug("server onStart address=%s\n", m_address->toString().c_str());
 
   startThread();
   return RT_OK;
