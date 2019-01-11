@@ -20,14 +20,13 @@ limitations under the License.
 #define __RT_REMOTE_OBJECT_LOCATOR_H__
 
 #include "rtRemoteClient.h"
-#include "rtRemoteSocketUtils.h"
 #include "rtRemoteMessageHandler.h"
+#include "rtRemoteNet.h"
 
 #include <condition_variable>
 #include <map>
 #include <mutex>
 #include <string>
-#include <thread>
 
 #include <stdint.h>
 #include <netinet/in.h>
@@ -38,6 +37,8 @@ typedef void(*clientDisconnectedCallback)(void *data);
 class rtRemoteIResolver;
 
 class rtRemoteServer
+  : public std::enable_shared_from_this<rtRemoteServer>
+  , public rtRemoteSocketServerListener
 {
 public:
   rtRemoteServer(rtRemoteEnvironment* env);
@@ -60,9 +61,9 @@ private:
     int                 fd;
   };
 
-  void runListener();
-  void doAccept(int fd);
-
+  //rtRemoteSocketServerListener
+  virtual void onConnect(std::shared_ptr<rtRemoteSocket> socket) override;
+  virtual void onDisconnect(std::shared_ptr<rtRemoteSocket> socket) override;
 
   static rtError onOpenSession_Dispatch(std::shared_ptr<rtRemoteClient>& client, rtRemoteMessagePtr const& doc, void* argp)
     { return reinterpret_cast<rtRemoteServer *>(argp)->onOpenSession(client, doc); }
@@ -90,7 +91,6 @@ private:
     { return reinterpret_cast<rtRemoteServer *>(argp)->onClientStateChanged(client, state); }
 
   // command handlers
-  rtError start();
   rtError onIncomingMessage(std::shared_ptr<rtRemoteClient>& client, rtRemoteMessagePtr const& msg);
   rtError onOpenSession(std::shared_ptr<rtRemoteClient>& client, rtRemoteMessagePtr const& doc);
   rtError onGet(std::shared_ptr<rtRemoteClient>& client, rtRemoteMessagePtr const& doc);
@@ -98,7 +98,6 @@ private:
   rtError onMethodCall(std::shared_ptr<rtRemoteClient>& client, rtRemoteMessagePtr const& doc);
   rtError onKeepAlive(std::shared_ptr<rtRemoteClient>& client, rtRemoteMessagePtr const& doc);
   rtError onKeepAliveResponse(std::shared_ptr<rtRemoteClient>& client, rtRemoteMessagePtr const& doc);
-  rtError openRpcListener();
   rtError onClientStateChanged(std::shared_ptr<rtRemoteClient> const& client, rtRemoteClient::State state);
 
 private:
@@ -123,18 +122,17 @@ private:
   using CommandHandlerMap = std::map< std::string, rtRemoteCallback<rtRemoteMessageHandler> >;
   using ObjectRefeMap = std::map< std::string, ObjectReference >;
 
-  sockaddr_storage              m_rpc_endpoint;
-  int                           m_listen_fd;
+  std::shared_ptr<rtRemoteSocketServer> m_csServer;
+  std::shared_ptr<rtRemoteSocketServer> m_wsServer;
 
-  std::unique_ptr<std::thread>  m_thread;
   mutable std::mutex            m_mutex;
   CommandHandlerMap             m_command_handlers;
 
   rtRemoteIResolver*            m_resolver;
   ClientMap                     m_object_map;
+                                              
   ClientList                    m_connected_clients;
   ClientDisconnectedCBMap       m_disconnected_callback_map;
-  int                           m_shutdown_pipe[2];
   uint32_t                      m_keep_alive_interval;
   rtRemoteEnvironment*          m_env;
 };
