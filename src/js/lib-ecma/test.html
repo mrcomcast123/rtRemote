@@ -1,0 +1,498 @@
+<!DOCTYPE HTML>
+<html>
+   <head>
+      <script src="buffer.js" type="text/javascript"></script>
+      <script src="config.js" type="text/javascript"></script>
+      <script src="common/logger.js" type="text/javascript"></script>
+      <script src="RTConst.js" type="text/javascript"></script>
+      <script src="RTEnvironment.js" type="text/javascript"></script>
+      <script src="RTException.js" type="text/javascript"></script>
+      <script src="RTStatusCode.js" type="text/javascript"></script>
+      <script src="RTValueType.js" type="text/javascript"></script>
+      <script src="RTValueHelper.js" type="text/javascript"></script>
+      <script src="RTRemoteMessageType.js" type="text/javascript"></script>
+      <script src="RTMessageHelper.js" type="text/javascript"></script>
+      <script src="RTRemoteObject.js" type="text/javascript"></script>
+      <script src="RTRemoteTask.js" type="text/javascript"></script>
+      <script src="common/helper.js" type="text/javascript"></script>
+      <script src="RTRemoteSerializer.js" type="text/javascript"></script>
+      <script src="RTRemoteUnicastResolver.js" type="text/javascript"></script>
+      <script src="RTRemoteWebSocketTransport.js" type="text/javascript"></script>
+      <script src="RTRemoteProtocol.js" type="text/javascript"></script>
+      <script src="RTRemoteClientConnection.js" type="text/javascript"></script>
+      <script src="RTRemoteConnectionManager.js" type="text/javascript"></script>
+      <script src="RTRemoteProxy.js" type="text/javascript"></script>
+      <script type = "text/javascript">
+
+var resolver = null;
+var serviceMgr = null;
+var service = null;
+
+function doEveryThing()
+{
+  var process = [];
+  process["argv"] = [ "", "", "getName" ];
+
+  resolve = new RTRemoteUnicastResolver("ws://10.0.0.33:3001");
+  resolve.start()
+    .then(() => { resolve.locateObject('rtServiceManager')
+    .then((uri) => RTRemoteConnectionManager.getObjectProxy(uri))	
+    .then((rtServiceManager) => {
+      const serviceTest = () => {
+        Promise.resolve()
+          .then(() => {
+          logger.debug("test.html 1");
+            /*Creating a proxy object of rtServiceManger object*/ 
+	          var rtServiceManagerProxyObj = new RTRemoteProxy(rtServiceManager);
+          logger.debug("test.html 3");
+            /*Creating a service object using create service method of servicemanager*/ 
+	          var displaySettingServiceObj = rtServiceManagerProxyObj.createService_2(
+          		RTValueHelper.create("10.0.0.192", RTValueType.STRING),
+          		RTValueHelper.create('org.openrdk.DisplaySettings', RTValueType.STRING));
+          logger.debug("test.html 3");
+
+            displaySettingServiceObj.then((displaySettingServiceObj) => {
+
+          logger.debug("test.html 4");
+            
+              /*Creating a proxy object of service object*/ 
+              var service = new RTRemoteProxy(displaySettingServiceObj.value);
+                 
+          logger.debug("test.html 5");
+
+              /*Calling method base on user input*/
+	            if(process.argv.length == 3) {
+                switch(process.argv[2]) {
+                  case "getName" :
+          logger.debug("test.html 6");
+
+	                  var name = service.getName();	
+	                  name.then(function (name) {logger.debug(`Name of the service : ${name.value}`);});
+                    break;
+                  case "getApiVersionNumber" :
+	                  var version = service.getApiVersionNumber();	
+	                  version.then(function (version) {logger.debug(`Version of the service : ${version.value}`);});
+                    break;
+	                case "unregisterEvents" :
+                    var result = service.unregisterEvents();
+	                  result.then(function (result) {logger.debug(`Event unresgistered ? ${result.value}`);});
+                    break;
+	                case "registerForAsyncResponses" :
+                    var result = service.registerForAsyncResponses();
+	                  result.then(function (result) {logger.debug(`Register For Async Responses ? ${result.value}`);});
+                    break;
+	                case "unregisterForAsyncResponses" :
+                    var result = service.unregisterForAsyncResponses();
+	                  result.then(function (result) {logger.debug(`Unregister For Async Responses ? ${result.value}`);});
+                    break;
+                  case "getSharedObjectsList" :
+	                  var list = service.getSharedObjectsList();	
+	                  list.then(function (list) {logger.debug(`List of Shared object : ${list.value}`);});
+                    break;
+                  case "getQuirks" :
+	                  var quirks = service.getQuirks();	
+	                  quirks.then(function (quirks) {logger.debug(`Quirks : ${quirks.value}`);});
+                    break;
+                  case "setApplicationManagerDelegate" :
+	                  var result = service.setApplicationManagerDelegate();	
+	                  result.then(function (result) {logger.debug(`Result : ${result.value}`);});
+                    break;
+                  case "applicationManagerDelegate" :
+	                  var result = service.applicationManagerDelegate();	
+	                  result.then(function (result) {logger.debug(`Result : ${result.value}`);});
+                    break;
+                  case "getConnectedVideoDisplays" :
+	                  var displays = service.getConnectedVideoDisplays();
+	                  displays.then(function (displays) {logger.debug(`Displays : ${displays.value}`);});
+                    break;
+	                case "getConnectedAudioPorts" :
+	                  var ports = service.getConnectedAudioPorts();
+	                  ports.then(function (ports) {logger.debug(`Ports : ${ports.value}`);});
+                    break;
+	                case "getSupportedResolutions" :
+                    var resolution = service.getSupportedResolutions();	
+	                  resolution.then(function (resolution) {logger.debug(`Resolution : ${resolution.value}`);});
+                    break;
+	                case "getSupportedVideoDisplays" :
+	                  var displays = service.getSupportedVideoDisplays();
+	                  displays.then(function (displays) {logger.debug(`Displays : ${displays.value}`);});
+                    break;
+	                case "getSupportedAudioPorts" :
+	                  var ports = service.getConnectedAudioPorts();
+	                  ports.then(function (ports) {logger.debug(`Ports : ${ports.value}`);});
+                    break;
+	                case "getZoomSetting" :
+	                  var zoom = service.getZoomSetting();
+	                  zoom.then(function (zoom) {logger.debug(`Zoom : ${zoom.value}`);});
+                    break;
+	                case "getSoundMode" :
+	                  var mode = service.getSoundMode();
+	                  mode.then(function (mode) {logger.debug(`Mode : ${mode.value}`);});
+                    break;
+	                case "readEDID" :
+	                  var edid = service.readEDID();
+	                  edid.then(function (edid) {logger.debug(`EDID : ${ edid.value}`);});
+                    break;
+	                case "readHostEDID" :
+	                  var edid = service.readHostEDID();
+	                  edid.then(function (edid) {logger.debug(`Host EDID : ${edid.value}`);});
+                    break;
+	                case "getSupportedSettopResolutions" :
+                    var resolution = service.getSupportedSettopResolutions();	
+	                  resolution.then(function (resolution) {logger.debug(`Resolution : ${resolution.value}`);});
+                    break;
+	                case "getSettopHDRSupport" :
+                    var resolution = service.getSettopHDRSupport();	
+	                  resolution.then(function (resolution) {logger.debug(`Resolution : ${resolution.value}`);});
+                    break;
+	                case "getTvHDRSupport" :
+                    var resolution = service.getTvHDRSupport();	
+	                  resolution.then(function (resolution) {logger.debug(`Resolution : ${resolution.value}`);});
+                    break;
+	                default:	
+	                  logger.debug("Invalid argument or no such method");
+                    break;
+                }
+	            } else if(process.argv.length == 4) {
+                switch(process.argv[2]) {
+	                case "setApiVersionNumber" :
+                    service.setApiVersionNumber(RTValueHelper.create(process.argv[3], RTValueType.STRING));
+                    logger.debug("Api Version number set");
+                    break;
+	                case "setProperties" :
+                    var result = service.setProperties(RTValueHelper.create(process.argv[3], RTValueType.STRING));
+	                  result.then(function (result) {logger.debug(`Properties set ? ${result.value}`);});
+                    break;
+	                case "getProperties" :
+                    var properties = service.getProperties(RTValueHelper.create(process.argv[3], RTValueType.STRING));
+	                  properties.then(function (properties) {logger.debug(`Properties : ${properties.value}`);});
+                    break;
+	                case "registerForEvents" :
+                    var result = service.registerForEvents(RTValueHelper.create(process.argv[3], RTValueType.STRING));
+	                  result.then(function (result) {logger.debug(`Event resgistered ? ${result.value}`);});
+                    break;
+	                case "unregisterEventsList" :
+                    var list = service.unregisterEventsList(RTValueHelper.create(process.argv[3], RTValueType.STRING));
+	                  list.then(function (list) {logger.debug(`List of unresgistered Event : ${list.value}`);});
+                    break;
+	                case "getCurrentResolution" :
+                    var resolution = service.getCurrentResolution(RTValueHelper.create(process.argv[3], RTValueType.STRING));
+                    resolution.then(function (resolution) {logger.debug(`Resolution : ${resolution.value}`);});
+                    break;
+	                case "getSupportedResolutions" :
+                    var resolution = service.getSupportedResolutions(RTValueHelper.create(process.argv[3], RTValueType.STRING));
+                    resolution.then(function (resolution) {logger.debug(`Resolution : ${resolution.value}`);});
+                    break;
+	                case "getSupportedTvResolutions" :
+                    var resolution = service.getSupportedTvResolutions(RTValueHelper.create(process.argv[3], RTValueType.STRING));
+                    resolution.then(function (resolution) {logger.debug(`Resolution : ${resolution.value}`);});
+                    break;
+	                case "getSupportedAudioModes" :
+                    var modes = service.getCurrentResolution(RTValueHelper.create(process.argv[3], RTValueType.STRING));	
+	                  modes.then(function (modes) {logger.debug(`Resolution : ${modes.value}`);});
+                    break;
+	                case "setZoomSetting" :
+	                  var result = service.setZoomSetting(RTValueHelper.create(process.argv[3], RTValueType.STRING));
+	                  result.then(function (result) {logger.debug(`Zoom set ? ${result.value}`);});
+                    break;
+	                case "getActiveInput" :
+	                  var activeInput = service.getActiveInput(RTValueHelper.create(process.argv[3], RTValueType.STRING));
+	                  activeInput.then(function (activeInput) {logger.debug(`Zoom : ${activeInput.value}`);});
+                    break;
+	                default:
+	                  logger.debug("Invalid argument or no such method");
+                    break;
+                }
+	            } else if(process.argv.length == 5) {
+                switch(process.argv[2]) {
+	                case "setCurrentResolution" :
+                    var result = service.setCurrentResolution(
+                                 RTValueHelper.create(process.argv[3], RTValueType.STRING),
+                                 RTValueHelper.create(process.argv[4], RTValueType.STRING));	
+	                  result.then(function (result) {logger.debug(`Resolution set ?  ${result.value}`);});
+                    break;
+	                case "setSoundMode" :
+                    var result = service.setSoundMode(
+                                 RTValueHelper.create(process.argv[3], RTValueType.STRING),
+                                 RTValueHelper.create(process.argv[4], RTValueType.STRING));	
+	                  result.then(function (result) {logger.debug(`Resolution set ?  ${result.value}`);});
+                    break;
+	                default:
+	                  logger.debug("Invalid argument or no such method");
+                    break;
+                }
+              } else {
+	              logger.debug("Invalid argument");
+	              return process.exit(0); 
+              }
+              //setTimeout((function() {return process.exit(0);}), 1000);
+	          });
+          }); 
+      }
+      serviceTest();  
+    }).catch(err => logger.error(err));
+  }).catch(err => logger.error(err));
+}
+
+
+function onLoad()
+{
+  //doEveryThing();
+  document.getElementById("buttonStartResolver").disabled = false;
+  //startResolver();
+}
+
+function startResolver()
+{
+  var host = document.getElementById("inputResolverHost").value;
+  var port = document.getElementById("inputResolverPort").value;
+  var uri = 'ws://'+host+':'+port;
+  resolver = new RTRemoteUnicastResolver(uri);
+  resolver.start().then(() => {
+    document.getElementById("connectResult").innerText = "Connected to " + uri;
+
+    resolver.locateObject('rtServiceManager')
+    .then((uri) => RTRemoteConnectionManager.getObjectProxy(uri))
+    .then((object) => {
+      const func = () => {
+        Promise.resolve().then(() => {
+          serviceMgr = new RTRemoteProxy(object)
+          document.getElementById("buttonStartResolver").disabled = true;
+          document.getElementById("buttonCreateService").disabled = false;
+          document.getElementById("locateDiv").style.visibility="visible";
+        });
+      }
+      func();
+    });
+  }).catch(err => logger.error(err));
+}
+
+function createService()
+{
+  serviceId = document.getElementById("inputServiceId").value
+
+  var serviceObj = serviceMgr.createService_2(
+		RTValueHelper.create("10.0.0.192", RTValueType.STRING),
+		RTValueHelper.create('org.openrdk.' + serviceId, RTValueType.STRING));
+
+  serviceObj.then((serviceObj) => {
+    service = new RTRemoteProxy(serviceObj.value);
+
+    document.getElementById("buttonCreateService").disabled = true;
+    document.getElementById("buttonCallMethod").disabled = false;
+    document.getElementById("methodDiv").style.visibility="visible";
+  });
+}
+
+function callMethod()
+{
+  var methodName = document.getElementById("inputMethodName").value;
+
+  //TODO - this style doesn't work
+  //service[methodName];
+  //or
+  //service["getName"];
+
+  switch(methodName) {
+    case "getName" :
+
+      var name = service.getName();	
+      name.then(function (name) {logger.debug(`Name of the service : ${name.value}`);});
+      break;
+    case "getApiVersionNumber" :
+      var version = service.getApiVersionNumber();	
+      version.then(function (version) {logger.debug(`Version of the service : ${version.value}`);});
+      break;
+    case "unregisterEvents" :
+      var result = service.unregisterEvents();
+      result.then(function (result) {logger.debug(`Event unresgistered ? ${result.value}`);});
+      break;
+    case "registerForAsyncResponses" :
+      var result = service.registerForAsyncResponses();
+      result.then(function (result) {logger.debug(`Register For Async Responses ? ${result.value}`);});
+      break;
+    case "unregisterForAsyncResponses" :
+      var result = service.unregisterForAsyncResponses();
+      result.then(function (result) {logger.debug(`Unregister For Async Responses ? ${result.value}`);});
+      break;
+    case "getSharedObjectsList" :
+      var list = service.getSharedObjectsList();	
+      list.then(function (list) {logger.debug(`List of Shared object : ${list.value}`);});
+      break;
+    case "getQuirks" :
+      var quirks = service.getQuirks();	
+      quirks.then(function (quirks) {logger.debug(`Quirks : ${quirks.value}`);});
+      break;
+    case "setApplicationManagerDelegate" :
+      var result = service.setApplicationManagerDelegate();	
+      result.then(function (result) {logger.debug(`Result : ${result.value}`);});
+      break;
+    case "applicationManagerDelegate" :
+      var result = service.applicationManagerDelegate();	
+      result.then(function (result) {logger.debug(`Result : ${result.value}`);});
+      break;
+    case "getConnectedVideoDisplays" :
+      var displays = service.getConnectedVideoDisplays();
+      displays.then(function (displays) {logger.debug(`Displays : ${displays.value}`);});
+      break;
+    case "getConnectedAudioPorts" :
+      var ports = service.getConnectedAudioPorts();
+      ports.then(function (ports) {logger.debug(`Ports : ${ports.value}`);});
+      break;
+    case "getSupportedResolutions" :
+      var resolution = service.getSupportedResolutions();	
+      resolution.then(function (resolution) {logger.debug(`Resolution : ${resolution.value}`);});
+      break;
+    case "getSupportedVideoDisplays" :
+      var displays = service.getSupportedVideoDisplays();
+      displays.then(function (displays) {logger.debug(`Displays : ${displays.value}`);});
+      break;
+    case "getSupportedAudioPorts" :
+      var ports = service.getConnectedAudioPorts();
+      ports.then(function (ports) {logger.debug(`Ports : ${ports.value}`);});
+      break;
+    case "getZoomSetting" :
+      var zoom = service.getZoomSetting();
+      zoom.then(function (zoom) {logger.debug(`Zoom : ${zoom.value}`);});
+      break;
+    case "getSoundMode" :
+      var mode = service.getSoundMode();
+      mode.then(function (mode) {logger.debug(`Mode : ${mode.value}`);});
+      break;
+    case "readEDID" :
+      var edid = service.readEDID();
+      edid.then(function (edid) {logger.debug(`EDID : ${ edid.value}`);});
+      break;
+    case "readHostEDID" :
+      var edid = service.readHostEDID();
+      edid.then(function (edid) {logger.debug(`Host EDID : ${edid.value}`);});
+      break;
+    case "getSupportedSettopResolutions" :
+      var resolution = service.getSupportedSettopResolutions();	
+      resolution.then(function (resolution) {logger.debug(`Resolution : ${resolution.value}`);});
+      break;
+    case "getSettopHDRSupport" :
+      var resolution = service.getSettopHDRSupport();	
+      resolution.then(function (resolution) {logger.debug(`Resolution : ${resolution.value}`);});
+      break;
+    case "getTvHDRSupport" :
+      var resolution = service.getTvHDRSupport();	
+      resolution.then(function (resolution) {logger.debug(`Resolution : ${resolution.value}`);});
+      break;
+    default:	
+      logger.debug("Invalid argument or no such method");
+      break;
+  }
+
+}
+
+      </script>
+   </head>
+   <body onload="onLoad();">
+    <br/>
+    <br/>
+    <a>ECMA Javascript rtServiceManager Demo</a>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <a>Step 1:</a>
+    <br/>
+    <br/>
+    <a>Enter the host and port of a unicast resolver running on your network. Then press Connect to start.</a>
+    <br/>
+    <br/>
+    <table>
+      <tr>
+        <td>Host:</td>
+        <td width=10></td>
+        <td>Port:</td>
+      </tr>
+      <tr>
+        <td><input type=text id="inputResolverHost" value="10.0.0.33"/></td>
+        <td/>
+        <td><input type=number id="inputResolverPort" value="3001" min="0" max="65535"/></td>
+        <td><button type="button" id="buttonStartResolver" onclick="startResolver()" disabled>Connect</button></td>
+      </tr>
+    </table>
+    <br/>
+    <a id="connectResult"></a>
+    <br/>
+    <br/>
+    <br/>
+    <div id=locateDiv style="visibility: hidden">
+    <a>Step 2:</a>
+    <br/>
+    <br/>
+    <a>Enter the id of the service you want to create.  Then press Create Service.</a>
+    <br/>
+    <br/>
+    <table>
+      <tr>
+        <td>Object ID:</td>
+      </tr>
+      <tr>
+        <td><input type=text id="inputServiceId" value="DisplaySettings"/></td>
+        <td><button type="button" id="buttonCreateService" onclick="createService()" disabled>Create Service</button></td>
+      </tr>
+    </table>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    </div>
+    <div id=methodDiv style="visibility: hidden">
+    <a>Step 3:</a>
+    <br/>
+    <br/>
+    <a>Enter the name of the method you wish to call.  Then press Call to invoke the method.</a>
+    <br/>
+    <br/>
+    <table>
+      <tr>
+        <td>Method Name:</td>
+      </tr>
+      <tr>
+        <td><input type=text id="inputMethodName" value="getName"/></td>
+        <td><button type="button" id="buttonCallMethod" onclick="callMethod()" disabled>Call</button></td>
+      </tr>
+    </table>    
+    </div>
+    
+<!--
+      <table>
+      <tr>
+      <td/>
+      <td>resolver address:</td>
+      </tr>
+      <tr>
+      <td align="right">Host</td>
+      <td><input type=text id="inputResolverHost" value="10.0.0.33"/></td>
+      </tr>
+      <tr>
+      <td align="right">Port</td>
+      <td><input type=text id="inputResolverPort" value="49219"/></td>
+      <td><button type="button" id="buttonStartResolver" onclick="startResolver()" disabled>Start Resolver</button></td>
+      <td><a id="resolverResult"/></td>
+      </tr>
+      <tr>
+      <td><br/></td>
+      </tr>
+      <tr>
+      <td align="right">Object ID</td>
+      <td><input type=text id="inputObjectId" value="rtServiceManager"/></td>
+      <td><button type="button" id="buttonLocateObject" onclick="locateObject()" disabled>Locate Object</button></td>
+      </tr>
+      <tr>
+      <td><br/></td>
+      </tr>
+      <tr>
+      <td align="right">Method Name</td>
+      <td><input type=text id="inputMethodName" value="getName"/></td>
+      <td><button type="button" id="buttonCallMethod" onclick="callMethod()" disabled>Call Method</button></td>
+      </tr>
+      </table>
+-->
+      <a id=result></a>
+   </body>
+</html>

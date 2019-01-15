@@ -1,0 +1,17 @@
+lib-ecma
+
+This is an effort to create a client-side ecma javascript demo which can connect
+to rtServiceManager on an stb, without the use of Node.js, and using only WebSockets.
+
+Files from the 'lib' folder were copied to 'lib-ecma', and Node.js references were removed.
+A new RTRemoteWebSocketTransport transport was create to replace RTRemoteTCPTransport.  
+
+Since WebSockets doesn't support multicast, rtRemoteMulticastResolver was replaced with a new 
+tRemoteUnicastResolver, which connects to the rtunicastresolverd deamon running on the stb. 
+
+The rtunicastresolverd daemon will proxy the web socket request to a multicast request on the stb
+and relay a websocket endpoint back to the client.  From there the client will use a WebSocket
+to connect to the server directly.  
+
+mrollins
+
