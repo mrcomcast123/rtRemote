@@ -15,40 +15,45 @@ Build Instructions for rtRemote (Linux only)
    cmake --build .
    ~~~~
 
-   Build libuv (required by uWebSockets)
+2. Build libuv (required by uWebSockets)
    ~~~~
-   cd pxCore/examples/pxScene2d/external/node/deps/uv
+   git clone https://github.com/libuv/libuv.git
+   cd libuv
+   git reset --hard d989902ac658b4323a4f4020446e6f4dc449e25c
    ./autogen.sh
    ./configure
    make
    ~~~~
 
-   Build uWebSockets
+3. Build uWebSockets
    ~~~~
-   cd pxCore/examples/pxScene2d/external/uWebSockets
-   cp Makefile.build Makefile
-   CFLAGS=" -I../node/deps/uv/include " make
+   git clone https://github.com/uNetworking/uWebSockets.git
+   cd uWebSockets
+   git checkout v0.14
+   git reset --hard 10ab3cd0360c62665bda113cde9e7c81714855ba
+   CFLAGS=" -I../libuv/include " make
    ~~~~
 
-2. Build rtRemote
+4. Build rtRemote
    ~~~~
    git clone https://github.com/pxscene/rtRemote.git
    cd rtRemote
    mkdir temp
    cd temp 
-   cmake -DRT_INCLUDE_DIR="../pxCore_main/src/" -DUWEBSOCKET_INCLUDE_DIR="../pxCore_main/examples/pxScene2d/external/uWebSockets/src" -DRT_LIBRARY_DIR="../pxCore_main/build/glut/" -DUWEBSOCKET_LIBRARY_DIR="../pxCore_main/examples/pxScene2d/external/uWebSocket" -DBUILD_RTREMOTE_UNICAST_RESOLVER=ON -DBUILD_RTREMOTE_SAMPLE_APP_SIMPLE=ON ..
+   cmake -DRT_INCLUDE_DIR="../pxCore/src/;../uWebSockets/src" -DRT_LIBRARY_DIR="../pxCore/build/glut/;../uWebSockets;../libuv/.libs" -DBUILD_UNICAST_RESOLVER=ON -DBUILD_SAMPLE_APP_SIMPLE=ON ..
    cmake --build . --config Release
    ~~~~
 
    The rtRemote libs will be located in rtRemote
 
-   Additional build configurations for rtRemote are:
+   All build configurations for rtRemote:
    ~~~~
-   Build rpcSampleApp: -DBUILD_RTREMOTE_SAMPLE_APP_SHARED=ON
-   Build rpcSampleApp_s: -DBUILD_RTREMOTE_SAMPLE_APP_STATIC=ON
-   Build rtSampleClient and rtSampleServer: -DBUILD_RTREMOTE_SAMPLE_APP_SIMPLE=ON
-   Enable rtRemote debugging: -DENABLE_RTREMOTE_DEBUG=ON
-   Enable rtRemote profiling: -DENABLE_RTREMOTE_PROFILE=ON
-   Disable librtremote shared library building: -DBUILD_RTREMOTE_SHARED_LIB=OFF
-   Disable librtremote static library building: -DBUILD_RTREMOTE_STATIC_LIB=OFF
+   Build rpcSampleApp: -DBUILD_SAMPLE_APP_SHARED=ON
+   Build rpcSampleApp_s: -DBUILD_SAMPLE_APP_STATIC=ON
+   Build rtSampleClient and rtSampleServer: -DBUILD_SAMPLE_APP_SIMPLE=ON
+   Build rtunicastresolverd: -DBUILD_UNICAST_RESOLVER=ON
+   Enable rtRemote debugging: -DENABLE_DEBUG=ON
+   Enable rtRemote profiling: -DENABLE_PROFILE=ON
+   Disable librtremote shared library building: -DBUILD_SHARED_LIB=OFF
+   Disable librtremote static library building: -DBUILD_STATIC_LIB=OFF
    ~~~~
