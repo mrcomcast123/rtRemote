@@ -84,6 +84,15 @@ public:
     return RT_OK;
   }
 
+  // some functions to
+  rtMethod1ArgAndReturn("callSomething", callSomething, rtString, rtString);
+  rtError callSomething(rtString const& arg, rtString &result)
+  {
+    rtLogInfo("callSomething called with arg: %s", arg.cString());
+    result = rtString("you called me with arg:") + arg;
+    return RT_OK;
+  }
+
   // helper
   void fireOnUploadComplete()
   {
@@ -111,6 +120,7 @@ rtDefineProperty(ContinuousVideoRecorder, name);
 rtDefineProperty(ContinuousVideoRecorder, onUploadComplete);
 rtDefineProperty(ContinuousVideoRecorder, prop);
 rtDefineProperty(ContinuousVideoRecorder, bigprop);
+rtDefineMethod(ContinuousVideoRecorder, callSomething);
 
 int main(int /*argc*/, char* /*argv*/ [])
 {

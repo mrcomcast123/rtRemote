@@ -202,6 +202,8 @@ void Resolver::run()
         rtLogError("uWebSocket Hub failed to listen on port\n");
         ::exit(EXIT_FAILURE);
     }
+    
+    rtLogWarn("uWebSocket Hub listening on port %d", WEBSOCKET_PORT_NUMBER);
 
     m_hub.run();
 }

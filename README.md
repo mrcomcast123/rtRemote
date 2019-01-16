@@ -60,3 +60,35 @@ Build Instructions for rtRemote (Linux only)
    Disable librtremote shared library building: -DBUILD_SHARED_LIB=OFF
    Disable librtremote static library building: -DBUILD_STATIC_LIB=OFF
    ~~~~
+
+# rtRemote Javascript
+
+Instruction for running the rtRemote javascript library and samples
+
+1. Install node packages
+   ~~~~
+   cd rtRemote/src/js
+   npm install
+   ~~~~
+
+2. Run node examples
+   ~~~~
+   terminal 1:
+   cd rtRemote/src/js/examples/server  
+   node sampleServer.js
+   terminal 2:
+   cd rtRemote/src/js/examples
+   node methodTest.js
+   ~~~~
+
+3. Run commonJS examples (requires rtRemote (above))
+   ~~~~
+   cd rtRemote/out
+   edit rtremote.conf and set rt.rpc.client.socket_type=websocket (instead of csocket)
+   ./rtSampleServer &
+   ./rtunicastresolverd
+   in browser run rtRemote/src/js/lib-ecma/test_sample_server.html
+   results visible in console log
+   ~~~~
+
+   

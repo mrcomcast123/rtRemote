@@ -27,6 +27,30 @@ limitations under the License.
 
 extern rtRemoteEnvironment* gEnv;
 
+rtError handleMessage(char* message, size_t length, void* userData)
+{
+  char* tmp = new char[length+1];
+  strncpy(tmp, message, length);
+  tmp[length] = 0;
+  rtLogDebug("websocket message: %s", tmp);
+  rtRemoteWebSocket* socket = static_cast< rtRemoteWebSocket* >(userData);
+  rtRemoteMessagePtr doc = nullptr;
+  rtError e = rtParseMessage(tmp, (int)length, doc);
+  if(e == RT_OK)
+  {
+    e = socket->onMessage(doc);
+  }
+  if (e != RT_OK)
+  {
+    //TODO cleanup the socket
+    rtLogWarn("error dispatching message. %s", rtStrError(e));
+    //m_streams[i].reset();
+    //s.reset();
+  }
+  delete [] tmp;
+  return e;
+}
+
 /*****************************************************************************************
  * 
  * rtRemoteWebSocketClient
@@ -66,73 +90,49 @@ rtError rtRemoteWebSocketClient::start()
 {
   if(isThreadRunning())
   {
-    printf("client already started\n");
+    rtLogDebug("client already started\n");
     return RT_ERROR;
   }
   startThread();
 
   m_hub.onConnection([this](uWS::WebSocket<uWS::CLIENT> *ws, uWS::HttpRequest req) {
-      printf("websocket connect\n");
+      rtLogDebug("websocket connect\n");
       rtRemoteWebSocket* socket = (rtRemoteWebSocket*)ws->getUserData();
       socket->m_clientSocket = ws;
-      //ws->setUserData(socket);
-      //this->getListener()->onConnect(socket);
   });
 
   m_hub.onDisconnection([this](uWS::WebSocket<uWS::CLIENT> *ws, int code, char *message, size_t length) {
-      printf("websocket disconnect\n");
-      //rtRemoteWebSocket* socket = (rtRemoteWebSocket*)ws->getUserData();
-      //this->getListener()->onDisconnect(socket);
-      //delete socket;
+      rtLogDebug("websocket disconnect\n");
   });
 
   m_hub.onMessage([this](uWS::WebSocket<uWS::CLIENT> *ws, char *message, size_t length, uWS::OpCode opCode) {
-      printf("websocket message: %s\n", message);
-      rtRemoteWebSocket* socket = (rtRemoteWebSocket*)ws->getUserData();
-
-      rtRemoteMessagePtr doc = nullptr;
-      rtError e = rtParseMessage(message, (int)length, doc);
-      if(e == RT_OK)
-      {
-        e = socket->onMessage(doc);
-      }
-      if (e != RT_OK)
-      {
-        //TODO cleanup the socket
-        rtLogWarn("error dispatching message. %s", rtStrError(e));
-        //m_streams[i].reset();
-        //s.reset();
-      }
-
+      handleMessage(message, length, ws->getUserData());
   });
   m_asyncConnect = new uS::Async(m_hub.getLoop());
   m_asyncConnect->start([](uS::Async *a) {
-      printf("Async connect\n");
+      rtLogDebug("Async connect\n");
       connectNext2();
   });
-  printf("client start ok\n");
+  rtLogDebug("client start ok\n");
   return RT_OK;
 }
 
 void rtRemoteWebSocketClient::connect(rtRemoteAddress* remoteEndPoint, rtRemoteWebSocket* socket)
 {
   rtRemoteSocketAddress* sockAddr = dynamic_cast<rtRemoteSocketAddress*>(remoteEndPoint);
-  printf("in connect\n");
   char uri[100];//TODO size matters
   sprintf(uri, "ws://%s:%d", sockAddr->getHost().c_str(), sockAddr->getPort());
   m_connQueue.push(std::make_pair(uri, socket));
   m_asyncConnect->send();
-  //connectNext();
 }
 
 void rtRemoteWebSocketClient::connectNext()
 {
-  printf("in connectNext\n");
   if(!m_connQueue.empty())
   {
     std::pair<std::string, rtRemoteWebSocket*> p = m_connQueue.front();
     m_connQueue.pop();
-    printf("connecting to %s\n", p.first.c_str());
+    rtLogDebug("connecting to %s\n", p.first.c_str());
     m_hub.connect(p.first, (void*)p.second);
   }
   
@@ -140,7 +140,7 @@ void rtRemoteWebSocketClient::connectNext()
 
 void rtRemoteWebSocketClient::onThreadRun()
 {
-  printf("client hub running\n");
+  rtLogDebug("client hub thread running\n");
   m_hub.run();
 }
 
@@ -212,7 +212,7 @@ rtError rtRemoteWebSocketServer::start(std::shared_ptr<rtRemoteSocketServerListe
   rtLogDebug("WebSocket listening at ws://%s:%d\n", sHost.empty() ? "localhost" : sHost.c_str(), port);
 
   m_hub.onConnection([this](uWS::WebSocket<uWS::SERVER> *ws, uWS::HttpRequest req) {
-      printf("websocket connect\n");
+      rtLogDebug("websocket connect\n");
 
       //
       // Create first instance of socket shared pointer. 
@@ -229,31 +229,14 @@ rtError rtRemoteWebSocketServer::start(std::shared_ptr<rtRemoteSocketServerListe
   });
 
   m_hub.onDisconnection([this](uWS::WebSocket<uWS::SERVER> *ws, int code, char *message, size_t length) {
-      printf("websocket disconnect\n");
+      rtLogDebug("websocket disconnect\n");
 
       rtRemoteWebSocket* socket = static_cast< rtRemoteWebSocket* >(ws->getUserData());
       disconnectSocket(socket);
   });
 
   m_hub.onMessage([this](uWS::WebSocket<uWS::SERVER> *ws, char *message, size_t length, uWS::OpCode opCode) {
-      printf("websocket message: %s\n", message);
-
-      rtRemoteWebSocket* socket = static_cast< rtRemoteWebSocket* >(ws->getUserData());
-
-      rtRemoteMessagePtr doc = nullptr;
-      rtError e = rtParseMessage(message, (int)length, doc);
-      if(e == RT_OK)
-      {
-        e = socket->onMessage(doc);
-      }
-      if (e != RT_OK)
-      {
-        //TODO cleanup the socket
-        rtLogWarn("error dispatching message. %s", rtStrError(e));
-        //m_streams[i].reset();
-        //s.reset();
-      }
-
+      handleMessage(message, length, ws->getUserData());
   });
 
   a = new uS::Async(m_hub.getLoop());

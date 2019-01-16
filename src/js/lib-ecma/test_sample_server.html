@@ -1,0 +1,50 @@
+<!DOCTYPE HTML>
+<html>
+   <head>
+      <script src="buffer.js" type="text/javascript"></script>
+      <script src="config.js" type="text/javascript"></script>
+      <script src="common/logger.js" type="text/javascript"></script>
+      <script src="RTConst.js" type="text/javascript"></script>
+      <script src="RTEnvironment.js" type="text/javascript"></script>
+      <script src="RTException.js" type="text/javascript"></script>
+      <script src="RTStatusCode.js" type="text/javascript"></script>
+      <script src="RTValueType.js" type="text/javascript"></script>
+      <script src="RTValueHelper.js" type="text/javascript"></script>
+      <script src="RTRemoteMessageType.js" type="text/javascript"></script>
+      <script src="RTMessageHelper.js" type="text/javascript"></script>
+      <script src="RTRemoteObject.js" type="text/javascript"></script>
+      <script src="RTRemoteTask.js" type="text/javascript"></script>
+      <script src="common/helper.js" type="text/javascript"></script>
+      <script src="RTRemoteSerializer.js" type="text/javascript"></script>
+      <script src="RTRemoteUnicastResolver.js" type="text/javascript"></script>
+      <script src="RTRemoteWebSocketTransport.js" type="text/javascript"></script>
+      <script src="RTRemoteProtocol.js" type="text/javascript"></script>
+      <script src="RTRemoteClientConnection.js" type="text/javascript"></script>
+      <script src="RTRemoteConnectionManager.js" type="text/javascript"></script>
+      <script src="RTRemoteProxy.js" type="text/javascript"></script>
+      <script type = "text/javascript">
+
+      function onLoad()
+      {
+        resolver = new RTRemoteUnicastResolver("ws://127.0.0.1:3001");
+        resolver.start().then(() => {
+          resolver.locateObject('some_name')
+          .then((uri) => RTRemoteConnectionManager.getObjectProxy(uri))
+          .then((obj) => {
+            const func = () => {
+              Promise.resolve().then(() => {
+                object = new RTRemoteProxy(obj)
+                var name = object.callSomething();	
+                name.then(function (name) {logger.debug(`Name of the object : ${name.value}`);});
+              });
+            }
+            func();
+          });
+        }).catch(err => logger.error(err));
+      }
+
+      </script>
+   </head>
+   <body onload="onLoad();">
+   </body>
+</html>
