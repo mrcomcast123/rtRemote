@@ -13,6 +13,7 @@ Build Instructions for rtRemote (Linux only)
    cd temp
    cmake -DBUILD_RTCORE_LIBS=ON -DBUILD_PXCORE_LIBS=OFF -DBUILD_PXSCENE=OFF ..
    cmake --build .
+   cd ../../
    ~~~~
 
 2. Build libuv (required by uWebSockets)
@@ -23,6 +24,7 @@ Build Instructions for rtRemote (Linux only)
    ./autogen.sh
    ./configure
    make
+   cd ..
    ~~~~
 
 3. Build uWebSockets
@@ -32,6 +34,7 @@ Build Instructions for rtRemote (Linux only)
    git checkout v0.14
    git reset --hard 10ab3cd0360c62665bda113cde9e7c81714855ba
    CFLAGS=" -I../libuv/include " make
+   cd ..
    ~~~~
 
 4. Build rtRemote
@@ -44,7 +47,7 @@ Build Instructions for rtRemote (Linux only)
    cmake --build . --config Release
    ~~~~
 
-   The rtRemote libs will be located in rtRemote
+   The rtRemote libs/apps will be located in rtRemote/out
 
    All build configurations for rtRemote:
    ~~~~
