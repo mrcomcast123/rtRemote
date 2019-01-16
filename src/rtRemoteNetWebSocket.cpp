@@ -201,13 +201,15 @@ rtError rtRemoteWebSocketServer::start(std::shared_ptr<rtRemoteSocketServerListe
     }
   }
 
-  if(!m_hub.listen(sHost.c_str(), port))
+  rtLogDebug("WebSocket server attempt to listen at host %s on port %d\n", sHost.empty() ? "localhost" : sHost.c_str(), port);
+
+  if(!m_hub.listen(sHost.empty() ? nullptr : sHost.c_str(), port))
   {
-    rtLogDebug("WebSocket server failed to listen on port\n");
+    rtLogWarn("WebSocket server failed to listen at host %s on port %d\n", sHost.empty() ? "localhost" : sHost.c_str(), port);
     return RT_ERROR;
   }
 
-  rtLogDebug("WebSocket listening at ws://%s:%d\n", sHost.c_str(), port);
+  rtLogDebug("WebSocket listening at ws://%s:%d\n", sHost.empty() ? "localhost" : sHost.c_str(), port);
 
   m_hub.onConnection([this](uWS::WebSocket<uWS::SERVER> *ws, uWS::HttpRequest req) {
       printf("websocket connect\n");

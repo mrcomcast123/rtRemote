@@ -655,6 +655,8 @@ rtError rtRemoteCSocket::connect(rtRemoteAddress* remoteAddress)
 {
   TRACE_FUNC
 
+  rtLogDebug("rtRemoteCSocket::connect address=%s", remoteAddress->toString().c_str());
+
   if(isConnected())
     disconnect();
 
@@ -697,6 +699,8 @@ rtError rtRemoteCSocket::connect(rtRemoteAddress* remoteAddress)
     rtSocketToString(m_remote_endpoint).c_str());
 */
   rtRemoteCSocketClient::instance()->addSocket(shared_from_this());
+
+  return RT_OK;
 }
 
 rtError rtRemoteCSocket::accept(int fd)

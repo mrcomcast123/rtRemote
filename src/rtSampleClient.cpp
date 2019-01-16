@@ -106,7 +106,7 @@ int main(int /*argc*/, char* /*argv*/ [])
   // std::thread t(run);
 
   int n = 10;
-  while (true)
+  while (n < 100)
   {
     rtValue val;
     #if 0
