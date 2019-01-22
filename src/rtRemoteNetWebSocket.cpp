@@ -90,19 +90,19 @@ rtError rtRemoteWebSocketClient::start()
 {
   if(isThreadRunning())
   {
-    rtLogDebug("client already started\n");
+    rtLogDebug("client already started");
     return RT_ERROR;
   }
   startThread();
 
   m_hub.onConnection([this](uWS::WebSocket<uWS::CLIENT> *ws, uWS::HttpRequest req) {
-      rtLogDebug("websocket connect\n");
+      rtLogDebug("websocket connect");
       rtRemoteWebSocket* socket = (rtRemoteWebSocket*)ws->getUserData();
       socket->m_clientSocket = ws;
   });
 
   m_hub.onDisconnection([this](uWS::WebSocket<uWS::CLIENT> *ws, int code, char *message, size_t length) {
-      rtLogDebug("websocket disconnect\n");
+      rtLogDebug("websocket disconnect");
   });
 
   m_hub.onMessage([this](uWS::WebSocket<uWS::CLIENT> *ws, char *message, size_t length, uWS::OpCode opCode) {
@@ -110,10 +110,10 @@ rtError rtRemoteWebSocketClient::start()
   });
   m_asyncConnect = new uS::Async(m_hub.getLoop());
   m_asyncConnect->start([](uS::Async *a) {
-      rtLogDebug("Async connect\n");
+      rtLogDebug("Async connect");
       connectNext2();
   });
-  rtLogDebug("client start ok\n");
+  rtLogDebug("client start ok");
   return RT_OK;
 }
 
@@ -132,7 +132,7 @@ void rtRemoteWebSocketClient::connectNext()
   {
     std::pair<std::string, rtRemoteWebSocket*> p = m_connQueue.front();
     m_connQueue.pop();
-    rtLogDebug("connecting to %s\n", p.first.c_str());
+    rtLogDebug("connecting to %s", p.first.c_str());
     m_hub.connect(p.first, (void*)p.second);
   }
   
@@ -140,10 +140,79 @@ void rtRemoteWebSocketClient::connectNext()
 
 void rtRemoteWebSocketClient::onThreadRun()
 {
-  rtLogDebug("client hub thread running\n");
+  rtLogDebug("client hub thread running");
   m_hub.run();
 }
 
+
+/*****************************************************************************************
+ * 
+ * PortReserver : this is needed in order to know which port uwebsocket will use
+ * because uWebSockets doesn't have an api to bind to any port or return the port its using
+*****************************************************************************************/
+
+class PortReserver
+{
+public:
+  PortReserver() : port(0), sock_fd(0)
+  {
+  }
+  ~PortReserver()
+  {
+    cleanup();
+  }
+  rtError reserve()
+  {
+    int ret = 0;
+    sockaddr_storage addr;
+    if (gEnv->Config->server_listen_interface() != "lo")
+    {
+      rtError e = rtParseAddress(addr, gEnv->Config->server_listen_interface().c_str(), 0, nullptr);
+      if (e != RT_OK)
+          rtGetDefaultInterface(addr, 0);
+    }
+    else
+    {
+      rtGetDefaultInterface(addr, 0);
+    }
+    sock_fd = ::socket(addr.ss_family, SOCK_STREAM, 0);
+    if (sock_fd < 0)
+    {
+      rtError e = rtErrorFromErrno(errno);
+      rtLogError("failed to create socket. %s", rtStrError(e));
+      return e;
+    }
+
+    int optval = 1;
+    setsockopt(sock_fd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+
+    socklen_t len;
+    rtSocketGetLength(addr, &len);
+    ret = ::bind(sock_fd, reinterpret_cast<sockaddr *>(&addr), len);
+    if (ret < 0)
+    {
+      rtError e = rtErrorFromErrno(errno);
+      rtLogError("failed to bind socket. %s", rtStrError(e));
+      return e;
+    }
+
+    rtGetSockName(sock_fd, addr);
+    rtLogInfo("local rpc listener on: %s", rtSocketToString(addr).c_str());
+    return rtGetPort(addr, &port);
+  }
+  void cleanup()
+  {
+    if (sock_fd != -1)
+      ::close(sock_fd);
+  }
+  int getPort()
+  {
+    return port;
+  }
+private:
+  uint16_t port;
+  int sock_fd;
+};
 
 /*****************************************************************************************
  * 
@@ -162,7 +231,7 @@ rtRemoteWebSocketServer::~rtRemoteWebSocketServer()
 
 rtError rtRemoteWebSocketServer::start(std::shared_ptr<rtRemoteSocketServerListener> listener, int port, const char* host)
 {
-  rtLogDebug("WebSocket server starting\n");
+  rtLogDebug("WebSocket server starting");
 
   if(isThreadRunning())
   {
@@ -171,9 +240,19 @@ rtError rtRemoteWebSocketServer::start(std::shared_ptr<rtRemoteSocketServerListe
   }
   m_listener = listener;
 
+  PortReserver portReserver;
+
   if(port == 0)
   {
-    port = gEnv->Config->websocket_server_listen_port();
+    if(portReserver.reserve() == RT_OK)
+    {
+      port = (int)portReserver.getPort();
+      rtLogDebug("reserved port %d", port);
+    }
+    else
+    {
+      rtLogError("failed to reserve port");
+    }
   }
 
   std::string sHost;
@@ -201,18 +280,19 @@ rtError rtRemoteWebSocketServer::start(std::shared_ptr<rtRemoteSocketServerListe
     }
   }
 
-  rtLogDebug("WebSocket server attempt to listen at host %s on port %d\n", sHost.empty() ? "localhost" : sHost.c_str(), port);
+  m_address = std::make_shared<rtRemoteSocketAddress>(sHost.empty() ? "localhost" : sHost.c_str(), port, "ws");
 
-  if(!m_hub.listen(sHost.empty() ? nullptr : sHost.c_str(), port))
+
+  if(!m_hub.listen(sHost.empty() ? nullptr : sHost.c_str(), port, nullptr, uS::REUSE_PORT))
   {
-    rtLogWarn("WebSocket server failed to listen at host %s on port %d\n", sHost.empty() ? "localhost" : sHost.c_str(), port);
+    rtLogWarn("WebSocket server failed to listen at %s", m_address->toString().c_str());
     return RT_ERROR;
   }
 
-  rtLogDebug("WebSocket listening at ws://%s:%d\n", sHost.empty() ? "localhost" : sHost.c_str(), port);
+  rtLogDebug("WebSocket server listening at %s", m_address->toString().c_str());
 
   m_hub.onConnection([this](uWS::WebSocket<uWS::SERVER> *ws, uWS::HttpRequest req) {
-      rtLogDebug("websocket connect\n");
+      rtLogDebug("websocket connect");
 
       //
       // Create first instance of socket shared pointer. 
@@ -229,7 +309,7 @@ rtError rtRemoteWebSocketServer::start(std::shared_ptr<rtRemoteSocketServerListe
   });
 
   m_hub.onDisconnection([this](uWS::WebSocket<uWS::SERVER> *ws, int code, char *message, size_t length) {
-      rtLogDebug("websocket disconnect\n");
+      rtLogDebug("websocket disconnect");
 
       rtRemoteWebSocket* socket = static_cast< rtRemoteWebSocket* >(ws->getUserData());
       disconnectSocket(socket);
@@ -241,13 +321,9 @@ rtError rtRemoteWebSocketServer::start(std::shared_ptr<rtRemoteSocketServerListe
 
   a = new uS::Async(m_hub.getLoop());
   a->start([](uS::Async *a) {
-      printf("Async close\n");
+      rtLogDebug("Async close");
       a->close();
   });
-
-  m_address = std::make_shared<rtRemoteSocketAddress>(sHost.empty() ? "localhost" : sHost.c_str(), port, "ws");
-
-  rtLogDebug("server onStart address=%s\n", m_address->toString().c_str());
 
   startThread();
   return RT_OK;
@@ -261,7 +337,7 @@ rtError rtRemoteWebSocketServer::stop()
 
 void rtRemoteWebSocketServer::onThreadRun()
 {
-  printf("server hub running\n");
+  rtLogDebug("server hub running");
   m_hub.run();
 }
 

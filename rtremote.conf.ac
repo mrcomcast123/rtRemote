@@ -100,10 +100,6 @@
     "default_value":"websocket",
     "type":"string" },
 
-{ "name":"rt.rpc.websocket_server.listen_port",
-    "default_value":"49218",
-    "type":"uint16" },
-
 { "name":"rt.rpc.websocket_server.listen_interface",
     "default_value":"lo",
     "type":"string" }

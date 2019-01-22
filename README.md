@@ -33,7 +33,7 @@ Build Instructions for rtRemote (Linux only)
    cd uWebSockets
    git checkout v0.14
    git reset --hard 10ab3cd0360c62665bda113cde9e7c81714855ba
-   CFLAGS=" -I../libuv/include " make
+   CFLAGS=" -I../libuv/include -DSO_REUSEPORT" make
    cd ..
    ~~~~
 
