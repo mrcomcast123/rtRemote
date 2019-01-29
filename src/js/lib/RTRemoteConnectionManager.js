@@ -8,10 +8,9 @@
  * @author      TCSCODER
  * @version     1.0
  */
-const { URL } = require('url');
 const logger = require('./common/logger');
 const RTRemoteClientConnection = require('./RTRemoteClientConnection');
-const RTException = require('./RTException');
+const helper = require('./common/helper');
 
 /**
  * the connections map
@@ -25,35 +24,16 @@ const connections = {};
  * @return {Promise<RTRemoteObject>} the promise with rt remote object
  */
 function getObjectProxy(uri) {
-  const url = new URL(uri);
+  const url = new helper.URLParser(uri);
   const connectionSpec = `${url.protocol}//${url.hostname}:${url.port}`;
   const getRemoteObject = (conn, pathname) => conn.getProxyObject(pathname.substr(1, pathname.length));
   if (connections[connectionSpec]) {
     return Promise.resolve(getRemoteObject(connections[connectionSpec], url.pathname));
   }
-  return createConnectionFromSpec(url).then((connection) => {
+  return RTRemoteClientConnection.createClientConnection(url).then((connection) => {
     connections[connectionSpec] = connection;
     return Promise.resolve(getRemoteObject(connection, url.pathname));
   });
-}
-
-/**
- * create connection from url
- * @param {URL} url the dest url the url object
- * @return {Promise<RTRemoteClientConnection>} the promise with connection
- */
-function createConnectionFromSpec(url) {
-  let connection = null;
-  const schema = url.protocol.substr(0, url.protocol.length - 1);
-  logger.info(`start connection ${url}`);
-  switch (schema) {
-    case 'tcp':
-      connection = RTRemoteClientConnection.createTCPClientConnection(url.hostname, url.port);
-      break;
-    default:
-      throw new RTException(`unsupported scheme : ${url.protocol}`);
-  }
-  return connection;
 }
 
 module.exports = {

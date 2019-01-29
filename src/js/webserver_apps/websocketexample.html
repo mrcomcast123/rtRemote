@@ -1,0 +1,56 @@
+/*
+  
+pxCore Copyright 2005-2018 John Robinson
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+*/
+
+<!DOCTYPE HTML>
+<html>
+   <head>
+      <script type = "text/javascript">
+         var index = 0;
+         function WebSocketTest()
+         {
+            var myindex = index;
+            index += 1;
+            //var ws = new WebSocket("ws://10.0.0.192:3001");
+            var ws = new WebSocket("ws://10.0.0.33:3002");
+            ws.onopen = function() { 
+                  ws.send(JSON.stringify({ 
+                    "message.type":"search", 
+                    "object.id":document.getElementById("query").value, 
+                    "sender.id":null, 
+                    "correlation.key":"4da67b13-d6ea-4ad8-855b-d7656fcc593f:"+index, 
+                    "socket_family":"websocket",
+                    "reply-to":"udp://127.0.0.1:51521"
+                }));
+            };
+            ws.onmessage = function (evt) { 
+                console.log("onMessage("+myindex+"):" + evt.data); 
+                document.getElementById('result').innerHTML="message " + myindex + ":" + evt.data;
+                ws.close(); 
+            };
+         }
+      </script>
+   </head>
+   <body onload="WebSocketTest();">
+      <div id = "sse">
+         <input type=text id="query" value="some_name"/>
+         <a href = "javascript:WebSocketTest()">Run WebSocket</a>
+         <p>
+         <a id=result></a>
+      </div>
+   </body>
+</html>

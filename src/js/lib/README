@@ -1,0 +1,32 @@
+add rollup support:
+
+config: src/js/lib/rollup.config.js
+
+run like this:
+cd src/js/lib
+rollup -c
+
+this builds 2 files:
+ rtremote_node.js
+ rtremote_browser.js
+
+currently rtremote_browser.js needs a manual patch (until figure out how to use rollup better)
+ remove this line near top: (function (crypto$1) {
+ remove this line at bottom: }(crypto$1));
+
+test:
+  first build rtRemote c++
+  cd out
+  edit out/rtremote.conf and set these:
+    rt.rpc.client.socket_type=websocket
+    rt.rpc.websocket_server.listen_interface=lo
+  run these:  
+  ./rtSampleServer
+  ./rtunicastresolverd
+  
+  test node:
+    cd src/js/lib
+    node rtremote_node_test.js
+
+  test browser
+    run src/js/lib/rtremote_browser_test.html in browser

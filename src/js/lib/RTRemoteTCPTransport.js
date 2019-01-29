@@ -47,6 +47,14 @@ class RTRemoteTCPTransport {
      */
     this.mRunning = true;
 
+    /**
+     * the buffer queue, used to cache and process packet datas
+     * @type {Buffer}
+     */
+    this.bufferQueue = Buffer.alloc(0);
+
+    this.dataCallback = null;
+
     if (typeof host === 'string') {
       this.host = host;
       this.port = port;
@@ -61,23 +69,42 @@ class RTRemoteTCPTransport {
    */
   open() {
     return new Promise((resolve, reject) => {
-      const transport = this;
-      this.socket = net.connect(transport.port, transport.host, () => {
-        logger.info(`new tcp connection to ${transport.host}:${transport.port}`);
-        resolve(transport);
+      const that = this;
+      this.socket = net.connect(that.port, that.host, () => {
+        logger.info(`new tcp connection to ${that.host}:${that.port}`);
+        resolve(that);
       });
       this.socket.on('error', (err) => {
         logger.error(err);
-        if (transport.mRunning) { // should close socket
-          transport.socket.destroy();
+        if (that.mRunning) { // should close socket
+          that.socket.destroy();
         }
         reject(new RTException(err.message));
       });
       this.socket.on('close', () => {
-        this.mRunning = false;
+        that.mRunning = false;
         logger.info('a connection closed');
       });
+      this.socket.on('data', (data) => {
+        that.bufferQueue = Buffer.concat([that.bufferQueue, Buffer.from(data)]);
+        if (that.bufferQueue.length > RTConst.PROTOCOL_HEADER_LEN) { // parse head length
+          const packetLen = that.bufferQueue.readUInt32BE(0);
+          const totalLen = packetLen + RTConst.PROTOCOL_HEADER_LEN;
+          if (that.bufferQueue.length >= totalLen) {
+            // it is a full packet, this packet can be parsed as message
+            const messageBuffer = Buffer.alloc(packetLen);
+            that.bufferQueue.copy(messageBuffer, 0, RTConst.PROTOCOL_HEADER_LEN, totalLen);
+            if(that.dataCallback)
+              that.dataCallback(messageBuffer);        
+            that.bufferQueue = that.bufferQueue.slice(totalLen); // remove parsed message
+          }
+        }
+      });
     });
+  }
+
+  ondata(callback) {
+    this.dataCallback = callback;
   }
 
   /**

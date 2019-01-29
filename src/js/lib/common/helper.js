@@ -127,7 +127,7 @@ function updateListenerForRTFuction(protocol, rtFunction) {
     const args = rtValueList || [];
     return protocol.sendCallByName(
       rtFunction[RTConst.VALUE][RTConst.OBJECT_ID_KEY],
-      rtFunction[RTConst.VALUE][RTConst.FUNCTION_KEY], ...args,
+      rtFunction[RTConst.VALUE][RTConst.FUNCTION_KEY], ...args
     );
   };
   newRtFunction[RTConst.FUNCTION_KEY] = rtFunction[RTConst.VALUE][RTConst.FUNCTION_KEY];
@@ -160,7 +160,7 @@ function setProperty(object, requestMessage) {
   const response = getRTMessageHelper().newSetPropertyResponse(
     requestMessage[RTConst.CORRELATION_KEY],
     RTStatusCode.UNKNOWN,
-    requestMessage[RTConst.OBJECT_ID_KEY],
+    requestMessage[RTConst.OBJECT_ID_KEY]
   );
 
   if (!object) { // object not found
@@ -211,7 +211,7 @@ function getProperty(object, getRequest, server) {
     getRequest[RTConst.CORRELATION_KEY],
     RTStatusCode.UNKNOWN,
     getRequest[RTConst.OBJECT_ID_KEY],
-    null,
+    null
   );
 
   if (!object) { // object not found
@@ -277,7 +277,7 @@ function invokeMethod(object, callRequest) {
   const response = getRTMessageHelper().newCallResponse(
     callRequest[RTConst.CORRELATION_KEY],
     null,
-    RTStatusCode.UNKNOWN,
+    RTStatusCode.UNKNOWN
   );
   if (!object) { // object not found
     response[RTConst.STATUS_CODE] = RTStatusCode.OBJECT_NOT_FOUND;
@@ -294,6 +294,28 @@ function invokeMethod(object, callRequest) {
   return response;
 }
 
+class URLParser
+{
+  constructor(uri)
+  {
+    this.href = uri;
+    var n = uri.search(":");
+    this.protocol = uri.substr(0,n+1);
+    n = uri.search("//");
+    var work = uri.substr(n+2);
+    var n2 = work.search(":");
+    this.hostname = work.substr(0,n2);
+    work = work.substr(n2+1);
+    var n3 = work.search("/");
+    this.port = work.substr(0,n3);
+    this.pathname = work.substr(n3);
+    console.log("protocol:" + this.protocol);
+    console.log("hostname:" + this.hostname);
+    console.log("port:" + this.port);
+    console.log("pathname:" + this.pathname);
+  }
+};
+
 module.exports = {
   getRandomUUID,
   getStatusStringByCode,
@@ -304,4 +326,5 @@ module.exports = {
   isBigNumber,
   invokeMethod,
   updateListenerForRTFuction,
+  URLParser
 };

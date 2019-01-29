@@ -1,0 +1,241 @@
+<!doctype html>
+<html>
+<header>
+<script src='./rtremote_browser.js' type="text/javascript"></script>
+<script type = "text/javascript">
+
+const TEST_MULTICAST=false;
+var progTimer;
+var complete = false;
+
+
+function onProgress(){
+  if(complete) {
+    clearTimeout(progTimer);
+  }
+  else if(progTimer) {
+    document.getElementById("iresult").innerText = document.getElementById("iresult").innerText + ".";
+    setTimeout(onProgress, 250);
+  }
+}
+
+function showError(err)
+{
+  clearTimeout(progTimer);
+  progTimer = null;
+  logger.error(err);
+  document.getElementById("iresult").innerText = "Error:" + err;
+}
+
+function parseCommand(input)
+{
+  var output;
+  var n1 = input.indexOf('(');
+  var n2 = input.indexOf(')');
+  var str = input.substr(n1+1, n2-n1-1);
+  output = input.substr(0,n1+1);
+  str = str.trim();
+  if(str.length>0)
+  {
+    var params = str.split(',');
+    for(var i = 0; i < params.length; ++i)
+    {
+      var param = params[i].trim();
+      if(param.length>0)
+      {
+        var type;
+        if(params[i][0] == "'" || params[i][0] == "\"")
+          type = "RTValueType.STRING";
+        else
+          type = "RTValueType.INT32";
+        if(i > 0)
+          output += ','
+        output += "RTValueHelper.create(" + params[i] + ", " + type + ")";
+      }
+    }
+  }
+  output += ')';
+  console.log(output);
+  return output;
+}
+
+function addFuncOpt(sel, name)
+{
+    var opt = document.createElement("option");
+    opt.text = name;
+    sel.add(opt);
+}
+
+function serviceChange()
+{
+  var flist = document.getElementById("ifunclist");
+  while(flist.length)
+    flist.remove(0);
+  var svc = document.getElementById("iservicelist").value;
+  console.log("serviceChange:"+svc);
+  if(svc == "org.rdk.ping_1") {
+    addFuncOpt(flist, "getNamedEndpoints()");
+    addFuncOpt(flist, "pingNamedEndpoint('CMTS',10)");
+    addFuncOpt(flist, "name()");
+  } else {
+    addFuncOpt(flist, "getName()");
+    addFuncOpt(flist, "getApiVersionNumber()");
+    addFuncOpt(flist, "setApiVersionNumber(2)");
+  }
+
+  
+  funcChange();
+}
+
+function funcChange()
+{
+  document.getElementById("ifunction").value = document.getElementById("ifunclist").value;
+}
+
+function getRegisteredServices()
+{
+  return new Promise((resolve, reject) => {
+    var resolver = createResolver();
+    document.getElementById("iresult").innerText = "";
+    resolver.start()
+      .then(() => { resolver.locateObject('rtServiceManager')
+      .then((uri) => RTRemoteConnectionManager.getObjectProxy(uri))	
+      .then((rtServiceManager) => {
+        Promise.resolve().then(() => {
+          logger.debug("rtServiceManager object resolved");
+          var rtServiceManagerProxyObj = new RTRemoteProxy(rtServiceManager);
+          var result = rtServiceManagerProxyObj.getRegisteredServices(
+        		RTValueHelper.create("", RTValueType.STRING));
+          result.then((val) => {
+            var vobj = JSON.parse(val.value);
+            logger.debug(vobj);
+            var svcs = vobj.services;
+            var select = document.getElementById("iservicelist");
+            for(var i = 0; i < svcs.length; ++i)
+            {
+              console.log(svcs[i]);
+              var opt = document.createElement("option");
+              opt.text = svcs[i];
+              select.add(opt);
+            }
+            resolve();
+          });
+        }); 
+      });
+    }).catch( (err) => { reject(err); });
+  });
+}
+
+function onLoad() {
+  getRegisteredServices().then(()=> {
+    document.getElementById("iservicelist").value = "org.rdk.ping_1";
+    document.getElementById("irun").disabled = false;
+    serviceChange();
+  }).catch( (err) => { showError(err); });
+}
+
+function getServiceName() {
+  var svc = document.getElementById("iservicelist").value;
+  var n = svc.lastIndexOf('_');
+  if(n != -1) {
+    svc = svc.substr(0,n);
+  }
+  console.log("getServiceName:" + svc);
+  return svc;
+}
+
+function createResolver() {
+  if(TEST_MULTICAST) {
+    logger.debug("multicast test");
+    return new RTRemoteMulticastResolver('224.10.0.12', 10004);
+  }
+  else {
+    logger.debug("unicast test");
+    return new RTRemoteUnicastResolver(document.getElementById("ihost").value, document.getElementById("iport").value);
+  }
+}
+
+function run() {
+  var resolver = createResolver();
+  complete = false;  
+  progTimer = setTimeout(onProgress, 250);
+  document.getElementById("iresult").innerText = "";
+  resolver.start()
+    .then(() => { resolver.locateObject('rtServiceManager')
+    .then((uri) => RTRemoteConnectionManager.getObjectProxy(uri))	
+    .then((rtServiceManager) => {
+      Promise.resolve().then(() => {
+        logger.debug("rtServiceManager object resolved");
+        var rtServiceManagerProxyObj = new RTRemoteProxy(rtServiceManager);
+        var serviceObj = rtServiceManagerProxyObj.createService(
+      		RTValueHelper.create("", RTValueType.STRING),
+      		RTValueHelper.create(getServiceName(), RTValueType.STRING));
+        serviceObj.then((serviceObj) => {
+          logger.debug("rtServiceManager proxy created");
+          var service = new RTRemoteProxy(serviceObj.value);
+          var command = "service."+parseCommand(document.getElementById("ifunction").value);
+          console.log("eval command:" + command);
+          var result = eval(command);
+          result.then(function (val) {
+            var msg = "Status=OK  Value=" + (val.value || "None");
+            logger.debug(msg);
+            complete = true;
+            clearTimeout(progTimer);
+            document.getElementById("iresult").innerText = msg; 
+          }).catch( (err) => {
+            showError(err);
+          });
+        });
+      }); 
+    }).catch( (err) => {
+      showError(err);
+    });
+  }).catch( (err) => {
+    showError(err);
+  });
+}
+
+</script>
+</header>
+<body onload='onLoad()'>
+<br/>
+<br/>
+<a>Service Manager WebSocket Demo</a>
+<br/>
+<br/>
+<br/>
+<br/>
+<a>Enter the host and port of a resolver. Select the service name. Select the function to evaluate. Then press Run.</a>
+<br/>
+<br/>
+<table>
+  <tr>
+    <td>Host:</td>
+    <td width=10></td>
+    <td>Port:</td>
+    <td width=10></td>
+    <td>Service:</td>
+    <td width=10></td>
+    <td>Function:</td>
+  </tr>
+  <tr>
+    <td><input type=text id="ihost" value="10.0.0.33"/></td>
+    <td/>
+    <td><input type=number id="iport" value="3001" min="0" max="65535"/></td>
+    <td/>
+    <td><select id="iservicelist" onchange="serviceChange()"/></td>
+    <td/>
+    <td><input type=text id="ifunction"/></td>
+    <td/>
+    <td><button type="button" id="irun" onclick="run()" disabled>Run</button></td>
+  </tr>
+  <tr><td/><td/><td/><td/><td/><td/>
+    <td>
+      <select id="ifunclist" onchange="funcChange()"/>
+    </td>
+  </tr>
+</table>
+<br/>
+<a id="iresult">
+</body>
+</html>

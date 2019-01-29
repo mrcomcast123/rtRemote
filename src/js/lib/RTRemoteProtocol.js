@@ -21,6 +21,7 @@ const RTRemoteTask = require('./RTRemoteTask');
 const RTException = require('./RTException');
 const helper = require('./common/helper');
 const logger = require('./common/logger');
+const JSONbig = require('json-bigint');
 
 /**
  * the rt remote protocol class
@@ -43,12 +44,6 @@ class RTRemoteProtocol {
      * @type {boolean}
      */
     this.transportOpened = transportOpened;
-
-    /**
-     * the buffer queue, used to cache and process packet datas
-     * @type {Buffer}
-     */
-    this.bufferQueue = Buffer.alloc(0);
 
     /**
      * represents protocol is running or not
@@ -94,19 +89,8 @@ class RTRemoteProtocol {
    */
   start() {
     const that = this;
-    this.transport.socket.on('data', (data) => {
-      that.bufferQueue = Buffer.concat([that.bufferQueue, Buffer.from(data)]);
-      if (that.bufferQueue.length > RTConst.PROTOCOL_HEADER_LEN) { // parse head length
-        const packetLen = that.bufferQueue.readUInt32BE(0);
-        const totalLen = packetLen + RTConst.PROTOCOL_HEADER_LEN;
-        if (that.bufferQueue.length >= totalLen) {
-          // it is a full packet, this packet can be parsed as message
-          const messageBuffer = Buffer.alloc(packetLen);
-          that.bufferQueue.copy(messageBuffer, 0, RTConst.PROTOCOL_HEADER_LEN, totalLen);
-          that.incomeMessage(RTRemoteSerializer.fromBuffer(messageBuffer));
-          that.bufferQueue = that.bufferQueue.slice(totalLen); // remove parsed message
-        }
-      }
+    this.transport.ondata( (data) => {
+      that.incomeMessage(RTRemoteSerializer.fromBuffer(JSONbig.parse(data)));
     });
   }
 

@@ -68,7 +68,7 @@ function processRTValue(rtValue) {
  * @returns {Object} the message object
  */
 function fromBuffer(messageBuffer) {
-  const messageObj = JSONbig.parse(messageBuffer.toString(RTConst.DEFAULT_CHARSET));
+  const messageObj = messageBuffer;//JSONbig.parse(messageBuffer.toString(RTConst.DEFAULT_CHARSET));
   const mType = messageObj[RTConst.MESSAGE_TYPE];
   switch (mType) {
     case RTRemoteMessageType.SET_PROPERTY_BYNAME_REQUEST:

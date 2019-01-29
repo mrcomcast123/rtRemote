@@ -72,7 +72,7 @@ class RTRemoteMulticastResolver {
       });
 
       this.udpSocketIn.on('message', (msg) => {
-        const locatedObj = RTRemoteSerializer.fromBuffer(msg);
+        const locatedObj = RTRemoteSerializer.fromBuffer(JSON.parse(msg));
         const objectId = locatedObj[RTConst.OBJECT_ID_KEY];
         objectMap[objectId] = `${locatedObj[RTConst.ENDPOINT]}/${objectId}`;
       });

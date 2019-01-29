@@ -9,9 +9,25 @@
  * @version     1.0
  */
 
-const RTRemoteTCPTransport = require('./RTRemoteTCPTransport');
 const RTRemoteObject = require('./RTRemoteObject');
 const RTRemoteProtocol = require('./RTRemoteProtocol');
+const RTException = require('./RTException');
+const logger = require('./common/logger');
+
+let RTRemoteTCPTransport = null;
+let RTRemoteWebSocketTransport = null;
+
+if (process.browser)
+{
+  console.log("in browser");
+  RTRemoteWebSocketTransport = require('./RTRemoteWebSocketTransport');
+}
+else
+{
+  console.log("in node");
+  RTRemoteTCPTransport = require('./RTRemoteTCPTransport');
+  RTRemoteWebSocketTransport = require('./RTRemoteWebSocketTransport');
+}
 
 /**
  * the rt remote client connection class
@@ -36,13 +52,30 @@ class RTRemoteClientConnection {
 }
 
 /**
- * create tcp connection
- * @param {string} host the host name
- * @param {number|int} port the host port
+ * create client connection from url
+ * @param {URL} url the dest url the url object
  * @return {Promise<RTRemoteClientConnection>} the promise with connection
  */
-function createTCPClientConnection(host, port) {
-  const transport = new RTRemoteTCPTransport(host, port);
+function createClientConnection(url) {
+  var transport = null;
+  const schema = url.protocol.substr(0, url.protocol.length - 1);
+  logger.info(`start connection ${url.href}`);
+  switch (schema) {
+    case 'tcp':
+      if(RTRemoteTCPTransport)
+        transport = new RTRemoteTCPTransport(url.hostname, url.port);
+      else
+        throw new RTException('cannot create TCP transport');
+      break;
+    case 'ws':
+      if(RTRemoteWebSocketTransport)
+        transport = new RTRemoteWebSocketTransport(url.hostname, url.port);
+      else
+        throw new RTException('cannot create WebSocket transport');
+      break;
+    default:
+      throw new RTException(`unsupported scheme : ${url.protocol}`);
+  }
 
   // 1. create protocol, the second param is false mean protocol will open transport socket
   // connection and bind relate input/output events
@@ -51,5 +84,5 @@ function createTCPClientConnection(host, port) {
 }
 
 module.exports = {
-  createTCPClientConnection,
+  createClientConnection,
 };
